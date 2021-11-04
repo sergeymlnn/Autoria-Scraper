@@ -12,6 +12,19 @@ BOT_NAME = 'AutoRiaScraper'
 SPIDER_MODULES = ['AutoRiaScraper.spiders']
 NEWSPIDER_MODULE = 'AutoRiaScraper.spiders'
 
+# Splash configuration
+SPLASH_URL = "http://127.0.0.1:8050"
+DOWNLOADER_MIDDLEWARES = {
+    "scrapy_splash.SplashCookiesMiddleware": 723,
+    "scrapy_splash.SplashMiddleware": 725,
+    "scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware": 810,
+}
+SPIDER_MIDDLEWARES = {
+    "scrapy_splash.SplashDeduplicateArgsMiddleware": 100,
+}
+DUPEFILTER_CLASS = "scrapy_splash.SplashAwareDupeFilter"
+HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
+SPLASH_LOG_400 = True
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'AutoRiaScraper (+http://www.yourdomain.com)'
