@@ -9,7 +9,6 @@ MIN_YEAR = MAX_YEAR - 10
 MIN_PRICE = 0
 
 
-# //form[@id='mainSearchForm']/div/label[contains(text(),'Нові')]
 class SpiderArguments(BaseModel):
     """Set and validates required search params of the filters bar from the main page to base the scraping process on"""
     category: Optional[str] = Field("Будь-який")
