@@ -19,6 +19,13 @@ ENV_CONFIG_PATH = ROOT_PATH / ENV_CONFIG_FILENAME
 # Uploading all available environment variables and ones from the config file
 ENV_CONFIG = {**environ, **dotenv_values(dotenv_path=ENV_CONFIG_PATH)}
 
+# Logging configuration
+LOG_LEVEL = "DEBUG"
+LOG_DIR = ROOT_PATH / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE = f'{LOG_DIR}/logs_{time.strftime("%Y-%m-%d")}.log'
+LOG_STDOUT = False
+
 # Splash configuration
 SPLASH_URL = ENV_CONFIG.get("SPLASH_URL", "http://127.0.0.1:8050")
 DOWNLOADER_MIDDLEWARES = {
