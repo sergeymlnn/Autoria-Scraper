@@ -9,7 +9,6 @@ MIN_YEAR = MAX_YEAR - 10
 MIN_PRICE = 0
 
 
-# //form[@id='mainSearchForm']/div/label[contains(text(),'Нові')]
 class SpiderArguments(BaseModel):
     """Set and validates required search params of the filters bar from the main page to base the scraping process on"""
     category: Optional[str] = Field("Будь-який")
@@ -22,6 +21,7 @@ class SpiderArguments(BaseModel):
     max_price: Optional[int] = Field(None)
     verified_vin: Optional[bool] = Field(False)
     cars_type: Literal["Всі", "Вживані", "Нові", "Під пригон"] = Field("Всі")
+    use_splash: bool = Field(True, description="Tells the spider whether is should leverage Spalsh or not")
 
     # TODO: Apply, when compatibility with lower-case in XPATH-expressions is provided
     # @validator('cars_type', pre=True, always=True)
