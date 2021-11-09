@@ -3,6 +3,7 @@ from pprint import pprint
 
 from scrapy import Spider, Request
 from scrapy.http.response.html import HtmlResponse
+from scrapy.shell import inspect_response
 from scrapy_splash import SplashRequest
 
 from AutoRiaScraper.items import SpiderArguments
@@ -10,8 +11,40 @@ from AutoRiaScraper.items import SpiderArguments
 
 lua_script = """
     function main(splash, args)
+        splash.private_mode_enabled = false
+        splash.images_enabled = false
+        splash.resource_timeout = 20.0
+
         assert(splash:go(args.url))
-        assert(splash:wait(2))
+
+        function focus(sel)
+            splash:select(sel):focus()
+        end
+
+        -- Wait until form is loaded to the page
+        while not splash:select(".footer-form") do
+            splash:wait(0.1)
+        end
+
+        -- focus("#categories")
+        -- splash:send_text(splash.args.car_category)
+        -- splash:select('.footer-form > button'):mouse_click()
+
+        local carCategory = splash.args.car_category
+        local carCategorySelect = splash:select('#categories')
+        carCategorySelect:send_text(carCategory)
+        assert(splash:wait(0.2))
+        splash:select('.footer-form > button'):mouse_click()
+
+
+        -- TOOD: Handle All Form Inputs
+
+        -- local carBrand = splash.args.car_brand
+        -- local carBrandInput = splash:select('#brandTooltipBrandAutocompleteInput-brand')
+        -- carBrandInput:send_text(carBrand)
+        -- assert(splash:wait(0.2))
+
+        assert(splash:wait(3))
         return splash:html()
     end
 """
@@ -42,6 +75,9 @@ class AutoriaSpider(Spider):
                     endpoint="execute",
                     args={
                         "lua_source": lua_script,
+                        "car_category": self.args.category,
+                        # "car_brand": self.args.brand,
+                        # "car_model": self.args.model,
                     },
                     cache_args=["lua_source"],
                 )
@@ -49,6 +85,8 @@ class AutoriaSpider(Spider):
 
     def parse(self, response: HtmlResponse) -> Iterator[Dict[str, str]]:
         """Iterates over car items and performs requests to each individual car page"""
+        # inspect_response(response, self)
         yield {
             "status": "OK",
+            "url": response.url,
         }
