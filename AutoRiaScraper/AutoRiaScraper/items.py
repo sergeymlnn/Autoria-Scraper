@@ -1,7 +1,12 @@
 from datetime import datetime
-from typing import Any, Dict, Optional, Literal
+from typing import Any, Dict, Optional, Literal, List
+from urllib.parse import urljoin
 
+from itemloaders.processors import Join, MapCompose
+from scrapy import Item as ScrapyItem, Field as ScrapyField
 from pydantic import BaseModel, Field, conint, validator
+from scrapy.loader import ItemLoader
+
 
 MAX_YEAR = datetime.now().year
 MIN_YEAR = MAX_YEAR - 10
@@ -40,3 +45,10 @@ class SpiderArguments(BaseModel):
         """Verifies if the input max year is greater than the specified min year"""
         assert v >= values["min_price"], "max price must be greater than min price"
         return v
+
+
+class CarItemsOnCategoryPage(ScrapyItem):
+    """Item to extract car links on a category page and link to the next page"""
+    current_page_url: str = ScrapyField("", output_processor=Join())
+    next_page_url: str = ScrapyField("", output_processor=Join())
+    car_urls_on_page: List[str] = ScrapyField(default=[])
