@@ -22,7 +22,7 @@ class AutoriaSpider(Spider):
     """Spdier to parse information about cars, based on specified filters from the main page"""
     name = 'autoria_spider'
     allowed_domains = ['auto.ria.com']
-    start_urls = ['https://auto.ria.com/uk/bus/?page=1']
+    start_urls = ['https://auto.ria.com/uk']
 
     def __init__(self, *args, **kwargs):
         """"""
