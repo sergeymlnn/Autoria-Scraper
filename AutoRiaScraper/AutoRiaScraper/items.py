@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from typing import Any, Dict, Optional, Literal, List
 from urllib.parse import urljoin
@@ -6,10 +7,11 @@ from itemloaders.processors import Join, MapCompose, TakeFirst
 from scrapy import Item as ScrapyItem, Field as ScrapyField
 from pydantic import BaseModel, Field, conint, validator
 from scrapy.loader import ItemLoader
+from price_parser import parse_price
 
 
 MAX_YEAR = datetime.now().year
-MIN_YEAR = MAX_YEAR - 10
+MIN_YEAR = MAX_YEAR - 50
 
 MIN_PRICE = 0
 
@@ -21,6 +23,28 @@ DefaultStringField = lambda default = "": ScrapyField(
     input_processor=MapCompose(str.strip),
     output_processor=TakeFirst()
 )
+
+
+def align_descriptions(descriptions: List[str]) -> str:
+    """Converts a description represented as a string in array-like form to a common string"""
+    return " ".join(map(str.strip, descriptions))
+
+
+def extract_price(price: str) -> Optional[float]:
+    """Extracts price from the input string and returns float value or None"""
+    if not price:
+        return None
+    return parse_price(price).amount_float
+
+
+def extract_year(str_year: str) -> Optional[str]:
+    """Extracts year from the string and returns it, whether the valus is between defined min and max year"""
+    try:
+        year = int(re.search(r"\d{4}", str_year).group())
+        print("YEAR: ", year)
+    except AttributeError:
+        return None
+    return year if MIN_YEAR < year < MAX_YEAR else None
 
 
 class SpiderArguments(BaseModel):
@@ -86,9 +110,13 @@ class CarSaleAdItem(ScrapyItem):
 class CarItem(ScrapyItem):
     """Item to extract full information about a car"""
     link: str = DefaultStringField()
-    brand: str = DefaultStringField()
     model: str = DefaultStringField()
-    year: str = DefaultStringField()
+    brand: str = DefaultStringField()
+    year: int = ScrapyField(
+        default=MAX_YEAR,
+        input_processor=MapCompose(extract_year),
+        output_processor=TakeFirst(),
+    )
     color: str = DefaultStringField()
     engine_capacity: str = DefaultStringField()
     last_repair: str = DefaultStringField()
@@ -111,9 +139,17 @@ class CarItem(ScrapyItem):
     body_type: str = DefaultStringField()
     transmission_type: str = DefaultStringField()
     drive_unit: str = DefaultStringField()
-    description: str = DefaultStringField()
+    description: str = ScrapyField(
+        default="",
+        input_processor=MapCompose(align_descriptions),
+        output_processor=TakeFirst(),
+    )
     safety: str = DefaultStringField()
     comfort: str = DefaultStringField()
     multimedia: str = DefaultStringField()
-    price: str = DefaultStringField()
+    price: float = ScrapyField(
+        default=0.0,
+        input_processor=MapCompose(extract_price),
+        output_processor=TakeFirst(),
+    )
     condition: str = DefaultStringField()
