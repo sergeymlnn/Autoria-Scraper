@@ -29,7 +29,7 @@ class AutoriaSpider(Spider):
     """Spdier to parse information about cars, based on specified filters from the main page"""
     name = 'autoria_spider'
     allowed_domains = ['auto.ria.com']
-    start_urls = ['https://auto.ria.com/uk/auto_skoda_octavia_tour_31571325.html']
+    start_urls = ['https://auto.ria.com/uk/auto_volkswagen_jetta_31664388.html']
 
     def __init__(self, *args, **kwargs):
         """"""
@@ -108,13 +108,19 @@ class AutoriaSpider(Spider):
         # Each <dd> element contains 2 <span> elements inside
         # 1-st <span> with class 'label' is a spec name
         # 2-nd <span> with class 'argument' is a spec value
-        specs_table = response.xpath("//div[@id='description_v3']/dl/dd")
+        sepcs_first_table = response.xpath("//div[@class='technical-info ticket-checked']/dl/dd")
+        specs_second_table = response.xpath("//div[@id='description_v3']/dl/dd")
+        car_certification_info = sepcs_first_table.xpath("./div[@class='t-check']")
 
-        # A dict, that follows a pattern: <spec_name>: <spec_value>
+        # Contains car specifications and follows the pattern: <spec_name>: <spec_value>
         specs = {
-            spec.xpath("./span[@class='label']/text()").get(): " ".join(spec.xpath("./span[@class='argument']//text()").getall())
-            for spec in specs_table
+            spec.xpath("./span[@class='label']/text()").get(): " ".join(spec.xpath("./span[contains(@class, 'argument')]//text()").getall())
+            for spec in sepcs_first_table
         }
+        specs.update({
+            spec.xpath("./span[@class='label']/text()").get(): " ".join(spec.xpath("./span[@class='argument']//text()").getall())
+            for spec in specs_second_table
+        })
 
         item.add_value("color", specs.get("Колір"))
         item.add_value("engine_capacity", specs.get("Двигун"))
@@ -126,6 +132,21 @@ class AutoriaSpider(Spider):
         item.add_value("condition", specs.get("Стан"))
         item.add_value("transmission_type", specs.get("Коробка передач"))
         item.add_value("crash_info", specs.get("Технічний стан"))
-
+        item.add_value("total_owners", specs.get("Кількість власників"))
+        item.add_value("last_repair", specs.get("Остання операція"))
+        item.add_value("has_crashes", True if specs.get("Участь в ДТП", "").lower() == "був в дтп" else False)
+        item.add_value("remains_at_large", False if specs.get("В розшуку", "").lower() == "ні" else True)
+        item.add_value(
+            "car_public_number",
+            car_certification_info.xpath("./span[@class='state-num ua']/text()").get()
+        )
+        item.add_value(
+            "is_VIN_confirmed",
+            True if car_certification_info.xpath("./span[@class='state-num ua']") else False
+        )
+        item.add_value(
+            "VIN",
+            car_certification_info.xpath("./span[@class='label-vin']/text()").get()
+        )
         loaded_item = item.load_item()
         yield loaded_item
