@@ -29,7 +29,7 @@ class AutoriaSpider(Spider):
     """Spdier to parse information about cars, based on specified filters from the main page"""
     name = 'autoria_spider'
     allowed_domains = ['auto.ria.com']
-    start_urls = ['https://auto.ria.com/uk/auto_volkswagen_jetta_31664388.html']
+    start_urls = ['https://auto.ria.com/uk/auto_mitsubishi_lancer_31688721.html']
 
     def __init__(self, *args, **kwargs):
         """"""
@@ -97,13 +97,13 @@ class AutoriaSpider(Spider):
     def parse_car_page(self, response: HtmlResponse):
         """Scrapes a page with a car on sale and collects all available information it"""
         # inspect_response(response, self)
-        item = ItemLoader(item=CarItem(), response=response)
-        item.add_value("link", response.url)
-        item.add_xpath("model", "//h1[@class='head']/text()")
-        item.add_xpath("brand", "//h1[@class='head']/span/text()")
-        item.add_xpath("year", "//h1[@class='head']/text()")
-        item.add_xpath("price", "//div[@class='price_value']/strong/text()")
-        item.add_xpath("description", "//div[@id='full-description']/text()")
+        car_item = ItemLoader(item=CarItem(), response=response)
+        car_item.add_value("link", response.url)
+        car_item.add_xpath("model", "//h1[@class='head']/text()")
+        car_item.add_xpath("brand", "//h1[@class='head']/span/text()")
+        car_item.add_xpath("year", "//h1[@class='head']/text()")
+        car_item.add_xpath("price", "//div[@class='price_value']/strong/text()")
+        car_item.add_xpath("description", "//div[@id='full-description']/text()")
 
         # Each <dd> element contains 2 <span> elements inside
         # 1-st <span> with class 'label' is a spec name
@@ -122,31 +122,31 @@ class AutoriaSpider(Spider):
             for spec in specs_second_table
         })
 
-        item.add_value("color", specs.get("Колір"))
-        item.add_value("engine_capacity", specs.get("Двигун"))
-        item.add_value("mileage_declared_by_seller", specs.get("Пробіг"))
-        item.add_value("multimedia", specs.get("Мультимедіа"))
-        item.add_value("comfort", specs.get("Комфорт"))
-        item.add_value("safety", specs.get("Безпека"))
-        item.add_value("drive_unit", specs.get("Привід"))
-        item.add_value("condition", specs.get("Стан"))
-        item.add_value("transmission_type", specs.get("Коробка передач"))
-        item.add_value("crash_info", specs.get("Технічний стан"))
-        item.add_value("total_owners", specs.get("Кількість власників"))
-        item.add_value("last_repair", specs.get("Остання операція"))
-        item.add_value("has_crashes", True if specs.get("Участь в ДТП", "").lower() == "був в дтп" else False)
-        item.add_value("remains_at_large", False if specs.get("В розшуку", "").lower() == "ні" else True)
-        item.add_value(
+        car_item.add_value("color", specs.get("Колір"))
+        car_item.add_value("engine_capacity", specs.get("Двигун"))
+        car_item.add_value("mileage_declared_by_seller", specs.get("Пробіг"))
+        car_item.add_value("multimedia", specs.get("Мультимедіа"))
+        car_item.add_value("comfort", specs.get("Комфорт"))
+        car_item.add_value("safety", specs.get("Безпека"))
+        car_item.add_value("drive_unit", specs.get("Привід"))
+        car_item.add_value("condition", specs.get("Стан"))
+        car_item.add_value("transmission_type", specs.get("Коробка передач"))
+        car_item.add_value("crash_info", specs.get("Технічний стан"))
+        car_item.add_value("total_owners", specs.get("Кількість власників"))
+        car_item.add_value("last_repair", specs.get("Остання операція"))
+        car_item.add_value("has_crashes", True if specs.get("Участь в ДТП", "").lower() == "був в дтп" else False)
+        car_item.add_value("remains_at_large", False if specs.get("В розшуку", "").lower() == "ні" else True)
+        car_item.add_value(
             "car_public_number",
             car_certification_info.xpath("./span[@class='state-num ua']/text()").get()
         )
-        item.add_value(
+        car_item.add_value(
             "is_VIN_confirmed",
             True if car_certification_info.xpath("./span[@class='state-num ua']") else False
         )
-        item.add_value(
+        car_item.add_value(
             "VIN",
             car_certification_info.xpath("./span[@class='label-vin']/text()").get()
         )
-        loaded_item = item.load_item()
+        loaded_car_item_item = car_item.load_item()
         yield loaded_item
