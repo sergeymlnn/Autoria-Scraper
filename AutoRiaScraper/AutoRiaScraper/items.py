@@ -112,7 +112,7 @@ class CarSellerItem(ScrapyItem):
         output_processor=TakeFirst(),
     )
     reputation: float = ScrapyField(default=0.0)
-    total_clients_server: int = ScrapyField(default=0)
+    total_clients_served: int = ScrapyField(default=0)
 
 
 class CarSaleAdItem(ScrapyItem):
