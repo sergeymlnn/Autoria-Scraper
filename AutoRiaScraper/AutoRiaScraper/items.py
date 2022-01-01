@@ -47,6 +47,18 @@ def extract_year(str_year: str) -> Optional[str]:
     return year if MIN_YEAR < year < MAX_YEAR else None
 
 
+def extract_date_from_text(text: str) -> Optional[str]:
+    """
+    Extracts date from the input text (if it's in) and returns date in changed format.
+    Source format: %d.%m.%Y
+    Output format: %Y-%m-%d
+    
+    """
+    date = re.search(r"\d{2}.\d{2}.\d{4}", text)
+    if date:
+        return datetime.strptime(res, "%d.%m.%Y").strftime("%Y-%m-%d")
+
+
 class SpiderArguments(BaseModel):
     """Set and validates required search params of the filters bar from the main page to base the scraping process on"""
     category: Optional[str] = Field("Будь-який")
@@ -94,7 +106,11 @@ class CarSellerItem(ScrapyItem):
     location: str = DefaultStringField()
     verified_by_bank: bool = ScrapyField(default=False)
     phone_verified: bool = ScrapyField(default=True)
-    signed_in_date: str = DefaultStringField()
+    signed_in_date: str = ScrapyField(
+        default=None,
+        input_processor=MapCompose(extract_date_from_text),
+        output_processor=TakeFirst(),
+    )
     reputation: float = ScrapyField(default=0.0)
     total_clients_server: int = ScrapyField(default=0)
 
