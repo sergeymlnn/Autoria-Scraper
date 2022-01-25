@@ -15,7 +15,6 @@ MIN_YEAR = MAX_YEAR - 50
 
 MIN_PRICE = 0
 
-
 # Wrapper for ScrapyField, used on string fields, that returns the first valid
 # value and eventually strips it.
 DefaultStringField = lambda default = "": ScrapyField(
@@ -24,11 +23,11 @@ DefaultStringField = lambda default = "": ScrapyField(
     output_processor=TakeFirst()
 )
 
-
-def align_descriptions(descriptions: List[str]) -> str:
-    """Converts a description represented as a string in array-like form to a common string"""
-    return " ".join(map(str.strip, descriptions))
-
+# Wrapper for ScrapyField, used on boolean fields and returns the first valid value.
+DefaultBooleanField = lambda: ScrapyField(
+    input_processor=MapCompose(bool),
+    output_processor=TakeFirst()
+)
 
 def extract_price(price: str) -> Optional[float]:
     """Extracts price from the input string and returns float value or None"""
@@ -41,7 +40,6 @@ def extract_year(str_year: str) -> Optional[str]:
     """Extracts year from the string and returns it, whether the valus is between defined min and max year"""
     try:
         year = int(re.search(r"\d{4}", str_year).group())
-        print("YEAR: ", year)
     except AttributeError:
         return None
     return year if MIN_YEAR < year < MAX_YEAR else None
@@ -52,11 +50,26 @@ def extract_date_from_text(text: str) -> Optional[str]:
     Extracts date from the input text (if it's in) and returns date in changed format.
     Source format: %d.%m.%Y
     Output format: %Y-%m-%d
-    
+
     """
     date = re.search(r"\d{2}.\d{2}.\d{4}", text)
     if date:
         return datetime.strptime(res, "%d.%m.%Y").strftime("%Y-%m-%d")
+
+
+def extract_integer_from_text(text: str) -> int:
+    """
+    Extracts an integer number from the input string. Unless it's found, 0 will be returned
+    Input: Продано 94 автомобілів
+    Output: 94
+
+    """
+    numbers = re.search(r"\d+", text)
+    try:
+        number = int(numbers.group())
+    except AttributeError:
+        number = 0
+    return number
 
 
 class SpiderArguments(BaseModel):
@@ -104,15 +117,32 @@ class CarSellerItem(ScrapyItem):
     name: str = DefaultStringField()
     last_online_time: str = DefaultStringField()
     location: str = DefaultStringField()
-    verified_by_bank: bool = ScrapyField(default=False)
-    phone_verified: bool = ScrapyField(default=True)
+    verified_by_bank: bool = DefaultBooleanField()
+    phone_verified: bool = DefaultBooleanField()
     signed_in_date: str = ScrapyField(
         default=None,
         input_processor=MapCompose(extract_date_from_text),
         output_processor=TakeFirst(),
     )
     reputation: float = ScrapyField(default=0.0)
-    total_clients_served: int = ScrapyField(default=0)
+    is_company: bool = DefaultBooleanField()
+    company_location: str = DefaultStringField()
+    sold_cars: int = ScrapyField(
+        default=0,
+        input_processor=MapCompose(extract_integer_from_text),
+        output_processor=TakeFirst(),
+    )
+    total_active_ads: int = ScrapyField(
+        default=0,
+        input_processor=MapCompose(extract_integer_from_text),
+        output_processor=TakeFirst(),
+    )
+    total_verified_active_ads: int = ScrapyField(
+        default=0,
+        input_processor=MapCompose(extract_integer_from_text),
+        output_processor=TakeFirst(),
+    )
+    company_website: str = DefaultStringField()
 
 
 class CarSaleAdItem(ScrapyItem):
@@ -138,28 +168,24 @@ class CarItem(ScrapyItem):
     last_repair: str = DefaultStringField()
     last_repair_info: str = DefaultStringField()
     total_owners: int = ScrapyField(default=1)
-    remains_at_large: bool = ScrapyField(default=False)
+    remains_at_large: bool = DefaultBooleanField()
     encumbrance_type: str = DefaultStringField()
     exclusion_limitations: str = DefaultStringField()
     official_mileage: float = ScrapyField(default=0.0)
-    mileage_declared_by_seller: float = ScrapyField(default=0.0)
+    mileage_declared_by_seller: float = DefaultStringField()
     mileage_fixation_date: str = DefaultStringField()
     mileage_fixation_source: str = DefaultStringField()
-    has_crashes: bool = ScrapyField(default=False)
+    has_crashes: bool = DefaultBooleanField()
     crash_info: str = DefaultStringField()
     car_public_number: str = DefaultStringField()
     VIN: str = DefaultStringField()
-    is_VIN_confirmed: bool = ScrapyField(default=False)
+    is_VIN_confirmed: bool = DefaultBooleanField()
     tags: List[str] = ScrapyField(default=[])
     images: List[str] = ScrapyField(default=[])
     body_type: str = DefaultStringField()
     transmission_type: str = DefaultStringField()
     drive_unit: str = DefaultStringField()
-    description: str = ScrapyField(
-        default="",
-        input_processor=MapCompose(align_descriptions),
-        output_processor=TakeFirst(),
-    )
+    description: str = DefaultStringField()
     safety: str = DefaultStringField()
     comfort: str = DefaultStringField()
     multimedia: str = DefaultStringField()
