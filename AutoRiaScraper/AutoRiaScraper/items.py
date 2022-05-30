@@ -1,42 +1,102 @@
-from datetime import datetime
-from typing import Any, Dict, Optional, Literal
+from functools import partial
+from typing import List, Optional
 
-from pydantic import BaseModel, Field, conint, validator
+from itemloaders.processors import MapCompose, TakeFirst
+from scrapy import Item as ScrapyItem, Field as ScrapyField
 
-MAX_YEAR = datetime.now().year
-MIN_YEAR = MAX_YEAR - 10
+from AutoRiaScraper.utils import (
+    extract_price_from_text,
+    extract_year_from_text,
+    extract_date_from_text,
+    extract_integer_from_text,
+)
 
-MIN_PRICE = 0
+
+# Aliases
+ScrapyStrField = partial(
+    ScrapyField,
+    input_processor=MapCompose(lambda s: s if s is not None else ""),
+    output_processor=TakeFirst()
+)
+ScrapyBooleanField = partial(
+    ScrapyField,
+    input_processor=MapCompose(bool),
+    output_processor=TakeFirst()
+)
+ScrapyIntegerField = partial(
+    ScrapyField,
+    input_processor=MapCompose(extract_integer_from_text),
+    output_processor=TakeFirst(),
+)
 
 
-class SpiderArguments(BaseModel):
-    """Set and validates required search params of the filters bar from the main page to base the scraping process on"""
-    category: Optional[str] = Field("Будь-який")
-    brand: Optional[str] = Field(None)
-    model: Optional[str] = Field(None)
-    region: Optional[str] = Field(None)
-    min_year: Optional[conint(ge=MIN_YEAR, le=MAX_YEAR)] = Field(MIN_YEAR)
-    max_year: Optional[conint(ge=MIN_YEAR, le=MAX_YEAR)] = Field(MAX_YEAR)
-    min_price: Optional[conint(ge=MIN_PRICE)] = Field(MIN_PRICE)
-    max_price: Optional[int] = Field(None)
-    verified_vin: Optional[bool] = Field(False)
-    cars_type: Literal["Всі", "Вживані", "Нові", "Під пригон"] = Field("Всі")
-    use_splash: bool = Field(True, description="Tells the spider whether is should leverage Spalsh or not")
+class CarItemsOnCategoryPage(ScrapyItem):
+    """Collects URLs on cars on a category page, category URL itself and URL to the next page"""
+    current_page_url: str = ScrapyStrField()
+    next_page_url: str = ScrapyStrField()
+    car_urls_on_page: List[str] = ScrapyField(default=[])
 
-    # TODO: Apply, when compatibility with lower-case in XPATH-expressions is provided
-    # @validator('cars_type', pre=True, always=True)
-    # def cars_type_to_lower(cls, v: str) -> str:
-    #     """Adjusts the input car type to the string in lower case"""
-    #     return v.lower()
 
-    @validator('max_year')
-    def validate_years(cls, v: int, values: Dict[str, Any]) -> int:
-        """Verifies if the input min year is less than the specified max year"""
-        assert v >= values["min_year"], "max year must be greater than min year"
-        return v
+class CarSellerItem(ScrapyItem):
+    """Collects information about seller of a particular car"""
+    name: str = ScrapyStrField()
+    last_online_time: str = ScrapyStrField()
+    location: str = ScrapyStrField()
+    verified_by_bank: bool = ScrapyBooleanField()
+    phone_verified: bool = ScrapyBooleanField()
+    signed_in_date: str = ScrapyStrField(input_processor=MapCompose(extract_date_from_text))
+    reputation: float = ScrapyField(default=0.0)
+    is_company: bool = ScrapyBooleanField()
+    company_location: str = ScrapyStrField()
+    sold_cars: Optional[int] = ScrapyIntegerField()
+    total_active_ads: Optional[int] = ScrapyIntegerField()
+    total_verified_active_ads: Optional[int] = ScrapyIntegerField()
+    company_website: str = ScrapyStrField()
 
-    @validator('max_price')
-    def validate_prices(cls, v: int, values: Dict[str, Any]) -> int:
-        """Verifies if the input max year is greater than the specified min year"""
-        assert v >= values["min_price"], "max price must be greater than min price"
-        return v
+
+class CarSaleAdItem(ScrapyItem):
+    """Collects information about advertisement of a particular car on the website"""
+    id: str = ScrapyStrField()
+    created_at: str = ScrapyStrField()
+    views: Optional[int] = ScrapyIntegerField()
+    saved: Optional[int] = ScrapyIntegerField()
+
+
+class CarItem(ScrapyItem):
+    """Collects full information about car on its page"""
+    link: str = ScrapyStrField()
+    model: str = ScrapyStrField()
+    brand: str = ScrapyStrField()
+    year: int = ScrapyIntegerField(input_processor=MapCompose(extract_year_from_text))
+    color: str = ScrapyStrField()
+    engine_capacity: str = ScrapyStrField()
+    last_repair: str = ScrapyStrField()
+    last_repair_info: str = ScrapyStrField()
+    total_owners: int = ScrapyField(default=1)
+    remains_at_large: bool = ScrapyBooleanField()
+    encumbrance_type: str = ScrapyStrField()
+    exclusion_limitations: str = ScrapyStrField()
+    official_mileage: float = ScrapyField(default=0.0)
+    mileage_declared_by_seller: float = ScrapyStrField()
+    mileage_fixation_date: str = ScrapyStrField()
+    mileage_fixation_source: str = ScrapyStrField()
+    has_crashes: bool = ScrapyBooleanField()
+    crash_info: str = ScrapyStrField()
+    car_public_number: str = ScrapyStrField()
+    VIN: str = ScrapyStrField()
+    is_VIN_confirmed: bool = ScrapyBooleanField()
+    tags: List[str] = ScrapyField(default=[])
+    images: List[str] = ScrapyField(default=[])
+    body_type: str = ScrapyStrField()
+    transmission_type: str = ScrapyStrField()
+    drive_unit: str = ScrapyStrField()
+    description: str = ScrapyStrField()
+    safety: str = ScrapyStrField()
+    comfort: str = ScrapyStrField()
+    multimedia: str = ScrapyStrField()
+    price: float = ScrapyField(
+        default=0.0,
+        input_processor=MapCompose(extract_price_from_text),
+        output_processor=TakeFirst(),
+    )
+    condition: str = ScrapyStrField()
