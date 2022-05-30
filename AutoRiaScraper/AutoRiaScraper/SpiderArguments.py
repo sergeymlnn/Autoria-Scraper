@@ -2,15 +2,25 @@ from typing import Optional
 
 from attrs import asdict, define, field, validators
 
-from AutoRiaScraper.settings import CURRENT_YEAR, MIN_YEAR, MIN_PRICE, CAR_TYPES
+from AutoRiaScraper.settings import (
+  CURRENT_YEAR, MIN_YEAR, MIN_PRICE, CAR_TYPES, CAR_CATEGORIES
+)
 
 
 @define(slots=True, frozen=True)
 class SpiderArguments:
   """Class to parse input arguments of the spider and return validated values"""
   brand: Optional[str] = None
-  cars_type: str = field(default="Всі", converter=str.lower, validator=validators.in_(CAR_TYPES))
-  category: str = field(default='Будь-який', converter=str.lower)
+  cars_type: str = field(
+    default=CAR_TYPES[0],
+    converter=str,
+    validator=validators.in_(CAR_TYPES)
+  )
+  category: str = field(
+    default=CAR_CATEGORIES[0],
+    converter=str,
+    validator=validators.in_(CAR_CATEGORIES)
+  )
   max_price: float = field(default="inf", converter=float)
   max_year: int = field(default=CURRENT_YEAR, converter=int)
   min_price: float = field(default=MIN_PRICE, converter=float)
