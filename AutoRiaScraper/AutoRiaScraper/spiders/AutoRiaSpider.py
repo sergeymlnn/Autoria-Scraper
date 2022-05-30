@@ -19,9 +19,7 @@ class AutoriaSpider(Spider):
     """Spider to parse information about cars, based on specified filters from the main page"""
     name = 'autoria_spider'
     allowed_domains = ['auto.ria.com']
-
-    # TODO: put a category URL with cars
-    start_urls = ['']
+    start_urls = ['https://auto.ria.com/uk/']
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -38,8 +36,6 @@ class AutoriaSpider(Spider):
         super().__init__(*args, **kwargs)
         self.args = SpiderArguments(**kwargs)
         self.settings = get_project_settings()
-
-        # Reading Lua-scripts to be used with Splash
         with open(self.settings["LUA_CATEGORY_PAGE_SCRIPT"], "rb") as f1, \
              open(self.settings["LUA_CAR_PAGE_SCRIPT"], "rb") as f2, \
              open(self.settings["LUA_MAIN_PAGE_HANDLE_FORM"], "rb") as f3:
@@ -53,9 +49,12 @@ class AutoriaSpider(Spider):
             request = SplashRequest(
                 url,
                 endpoint="execute",
-                args={"lua_source": self.lua_category_page_script},
                 cache_args=["lua_source"],
-                callback=self.parse_car_page
+                callback=self.parse,
+                args={
+                    "lua_source": self.lua_main_page_handle_form,
+                    "car_category": self.args.category
+                },
             )
             yield request
 
@@ -66,10 +65,11 @@ class AutoriaSpider(Spider):
         on the category page.
         """
         # inspect_response(response, self)
+        current_url = response.xpath("//link[@rel='canonical']/@href").get()
         item = ItemLoader(item=CarItemsOnCategoryPage(), response=response)
-        item.add_value("current_page_url", response.url)
-        item.add_value("next_page_url", gen_next_page_url(response.url))
+        item.add_value("current_page_url", current_url)
         item.add_xpath("car_urls_on_page", "//div[@class='item ticket-title']/a/@href")
+        item.add_value("next_page_url", gen_next_page_url(current_url))
         loaded_item = item.load_item()
         if not loaded_item.get("car_urls_on_page"):
             self.logger.warning(f"Cars not found in {loaded_item['current_page_url']}")
