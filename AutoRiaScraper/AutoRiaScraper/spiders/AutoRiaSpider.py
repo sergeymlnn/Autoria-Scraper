@@ -40,12 +40,12 @@ class AutoriaSpider(Spider):
         self.settings = get_project_settings()
 
         # Reading Lua-scripts to be used with Splash
-        lua_scripts_path = self.settings["LUA_SCRIPTS_PATH"]
-        lua_category_page_script = lua_scripts_path / "category_page.lua"
-        lua_car_page_script = lua_scripts_path / "car_page.lua"
-        with open(lua_category_page_script, "rb") as f1, open(lua_car_page_script, "rb") as f2:
+        with open(self.settings["LUA_CATEGORY_PAGE_SCRIPT"], "rb") as f1, \
+             open(self.settings["LUA_CAR_PAGE_SCRIPT"], "rb") as f2, \
+             open(self.settings["LUA_MAIN_PAGE_HANDLE_FORM"], "rb") as f3:
             self.lua_category_page_script = f1.read().decode("utf-8")
             self.car_page_script = f2.read().decode("utf-8")
+            self.lua_main_page_handle_form = f3.read().decode("utf-8")
 
     def start_requests(self) -> None:
         """Performs splash-requests to the URLs of self.start_urls object """

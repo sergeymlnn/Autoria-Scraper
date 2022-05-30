@@ -14,6 +14,9 @@ CAR_TYPES = ("всі", "вживані", "нові", "під пригон")
 # Paths to the dirs & files of the project
 ROOT_PATH = (Path(__file__) / "../../").resolve()
 LUA_SCRIPTS_PATH = Path(__file__).parent.absolute() / "lua"
+LUA_CATEGORY_PAGE_SCRIPT = LUA_SCRIPTS_PATH / "category_page.lua"
+LUA_CAR_PAGE_SCRIPT = LUA_SCRIPTS_PATH / "car_page.lua"
+LUA_MAIN_PAGE_HANDLE_FORM = LUA_SCRIPTS_PATH / "main_page_handle_form.lua"
 
 # Scrapy's Spider Settings
 BOT_NAME = 'AutoRiaScraper'
