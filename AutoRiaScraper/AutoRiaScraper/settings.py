@@ -9,7 +9,12 @@ from pathlib import Path
 CURRENT_YEAR = datetime.now().year
 MIN_YEAR = CURRENT_YEAR - 50
 MIN_PRICE = 0.0
-CAR_TYPES = ("всі", "вживані", "нові", "під пригон")
+CAR_TYPES = ("Всі", "Вживані", "Нові", "Під пригон")
+CAR_CATEGORIES = (
+    "Будь-який", "Легкові", "Мото", "Вантажівки", "Причепи", "Спецтехніка",
+    "Сільгосптехніка", "Автобуси", "Водний транспорт", "Повітряний транспорт",
+    "Автобудинки"
+)
 
 # Paths to the dirs & files of the project
 ROOT_PATH = (Path(__file__) / "../../").resolve()
