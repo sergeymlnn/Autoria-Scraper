@@ -1,119 +1,102 @@
-from datetime import datetime
-from typing import Any, Dict, Optional, Literal, List
-from urllib.parse import urljoin
+from functools import partial
+from typing import List, Optional
 
-from itemloaders.processors import Join, MapCompose, TakeFirst
+from itemloaders.processors import MapCompose, TakeFirst
 from scrapy import Item as ScrapyItem, Field as ScrapyField
-from pydantic import BaseModel, Field, conint, validator
-from scrapy.loader import ItemLoader
 
-
-MAX_YEAR = datetime.now().year
-MIN_YEAR = MAX_YEAR - 10
-
-MIN_PRICE = 0
-
-
-# Wrapper for ScrapyField, used on string fields, that returns the first valid
-# value and eventually strips it.
-DefaultStringField = lambda default = "": ScrapyField(
-    default,
-    input_processor=MapCompose(str.strip),
-    output_processor=TakeFirst()
+from AutoRiaScraper.utils import (
+    extract_price_from_text,
+    extract_year_from_text,
+    extract_date_from_text,
+    extract_integer_from_text,
 )
 
 
-class SpiderArguments(BaseModel):
-    """Set and validates required search params of the filters bar from the main page to base the scraping process on"""
-    category: Optional[str] = Field("Будь-який")
-    brand: Optional[str] = Field(None)
-    model: Optional[str] = Field(None)
-    region: Optional[str] = Field(None)
-    min_year: Optional[conint(ge=MIN_YEAR, le=MAX_YEAR)] = Field(MIN_YEAR)
-    max_year: Optional[conint(ge=MIN_YEAR, le=MAX_YEAR)] = Field(MAX_YEAR)
-    min_price: Optional[conint(ge=MIN_PRICE)] = Field(MIN_PRICE)
-    max_price: Optional[int] = Field(None)
-    verified_vin: Optional[bool] = Field(False)
-    cars_type: Literal["Всі", "Вживані", "Нові", "Під пригон"] = Field("Всі")
-    use_splash: bool = Field(True, description="Tells the spider whether is should leverage Spalsh or not")
-
-    # TODO: Apply, when compatibility with lower-case in XPATH-expressions is provided
-    # @validator('cars_type', pre=True, always=True)
-    # def cars_type_to_lower(cls, v: str) -> str:
-    #     """Adjusts the input car type to the string in lower case"""
-    #     return v.lower()
-
-    @validator('max_year')
-    def validate_years(cls, v: int, values: Dict[str, Any]) -> int:
-        """Verifies if the input min year is less than the specified max year"""
-        assert v >= values["min_year"], "max year must be greater than min year"
-        return v
-
-    @validator('max_price')
-    def validate_prices(cls, v: int, values: Dict[str, Any]) -> int:
-        """Verifies if the input max year is greater than the specified min year"""
-        assert v >= values["min_price"], "max price must be greater than min price"
-        return v
+# Aliases
+ScrapyStrField = partial(
+    ScrapyField,
+    input_processor=MapCompose(lambda s: s if s is not None else ""),
+    output_processor=TakeFirst()
+)
+ScrapyBooleanField = partial(
+    ScrapyField,
+    input_processor=MapCompose(bool),
+    output_processor=TakeFirst()
+)
+ScrapyIntegerField = partial(
+    ScrapyField,
+    input_processor=MapCompose(extract_integer_from_text),
+    output_processor=TakeFirst(),
+)
 
 
 class CarItemsOnCategoryPage(ScrapyItem):
-    """Item to extract car links on a category page and link to the next page"""
-    current_page_url: str = DefaultStringField()
-    next_page_url: str = DefaultStringField()
+    """Collects URLs on cars on a category page, category URL itself and URL to the next page"""
+    current_page_url: str = ScrapyStrField()
+    next_page_url: str = ScrapyStrField()
     car_urls_on_page: List[str] = ScrapyField(default=[])
 
 
 class CarSellerItem(ScrapyItem):
-    """Item to extract information about seller of a particular car"""
-    name: str = DefaultStringField()
-    last_online_time: str = DefaultStringField()
-    location: str = DefaultStringField()
-    verified_by_bank: bool = ScrapyField(default=False)
-    phone_verified: bool = ScrapyField(default=True)
-    signed_in_date: str = DefaultStringField()
+    """Collects information about seller of a particular car"""
+    name: str = ScrapyStrField()
+    last_online_time: str = ScrapyStrField()
+    location: str = ScrapyStrField()
+    verified_by_bank: bool = ScrapyBooleanField()
+    phone_verified: bool = ScrapyBooleanField()
+    signed_in_date: str = ScrapyStrField(input_processor=MapCompose(extract_date_from_text))
     reputation: float = ScrapyField(default=0.0)
-    total_clients_server: int = ScrapyField(default=0)
+    is_company: bool = ScrapyBooleanField()
+    company_location: str = ScrapyStrField()
+    sold_cars: Optional[int] = ScrapyIntegerField()
+    total_active_ads: Optional[int] = ScrapyIntegerField()
+    total_verified_active_ads: Optional[int] = ScrapyIntegerField()
+    company_website: str = ScrapyStrField()
 
 
 class CarSaleAdItem(ScrapyItem):
-    """Item to extract additional information about car sale ad"""
-    id: str = DefaultStringField()
-    created_at: str = DefaultStringField()
-    views: int = ScrapyField(default=0)
-    saved: int = ScrapyField(default=0)
+    """Collects information about advertisement of a particular car on the website"""
+    id: str = ScrapyStrField()
+    created_at: str = ScrapyStrField()
+    views: Optional[int] = ScrapyIntegerField()
+    saved: Optional[int] = ScrapyIntegerField()
 
 
 class CarItem(ScrapyItem):
-    """Item to extract full information about a car"""
-    link: str = DefaultStringField()
-    brand: str = DefaultStringField()
-    model: str = DefaultStringField()
-    year: str = DefaultStringField()
-    color: str = DefaultStringField()
-    engine_capacity: str = DefaultStringField()
-    last_repair: str = DefaultStringField()
-    last_repair_info: str = DefaultStringField()
+    """Collects full information about car on its page"""
+    link: str = ScrapyStrField()
+    model: str = ScrapyStrField()
+    brand: str = ScrapyStrField()
+    year: int = ScrapyIntegerField(input_processor=MapCompose(extract_year_from_text))
+    color: str = ScrapyStrField()
+    engine_capacity: str = ScrapyStrField()
+    last_repair: str = ScrapyStrField()
+    last_repair_info: str = ScrapyStrField()
     total_owners: int = ScrapyField(default=1)
-    remains_at_large: bool = ScrapyField(default=False)
-    encumbrance_type: str = DefaultStringField()
-    exclusion_limitations: str = DefaultStringField()
+    remains_at_large: bool = ScrapyBooleanField()
+    encumbrance_type: str = ScrapyStrField()
+    exclusion_limitations: str = ScrapyStrField()
     official_mileage: float = ScrapyField(default=0.0)
-    mileage_declared_by_seller: float = ScrapyField(default=0.0)
-    mileage_fixation_date: str = DefaultStringField()
-    mileage_fixation_source: str = DefaultStringField()
-    has_crashes: bool = ScrapyField(default=False)
-    crash_info: str = DefaultStringField()
-    car_public_number: str = DefaultStringField()
-    VIN: str = DefaultStringField()
-    is_VIN_confirmed: bool = ScrapyField(default=False)
+    mileage_declared_by_seller: float = ScrapyStrField()
+    mileage_fixation_date: str = ScrapyStrField()
+    mileage_fixation_source: str = ScrapyStrField()
+    has_crashes: bool = ScrapyBooleanField()
+    crash_info: str = ScrapyStrField()
+    car_public_number: str = ScrapyStrField()
+    VIN: str = ScrapyStrField()
+    is_VIN_confirmed: bool = ScrapyBooleanField()
     tags: List[str] = ScrapyField(default=[])
     images: List[str] = ScrapyField(default=[])
-    body_type: str = DefaultStringField()
-    transmission_type: str = DefaultStringField()
-    drive_unit: str = DefaultStringField()
-    description: str = DefaultStringField()
-    safety: str = DefaultStringField()
-    comfort: str = DefaultStringField()
-    multimedia: str = DefaultStringField()
-    price: str = DefaultStringField()
-    condition: str = DefaultStringField()
+    body_type: str = ScrapyStrField()
+    transmission_type: str = ScrapyStrField()
+    drive_unit: str = ScrapyStrField()
+    description: str = ScrapyStrField()
+    safety: str = ScrapyStrField()
+    comfort: str = ScrapyStrField()
+    multimedia: str = ScrapyStrField()
+    price: float = ScrapyField(
+        default=0.0,
+        input_processor=MapCompose(extract_price_from_text),
+        output_processor=TakeFirst(),
+    )
+    condition: str = ScrapyStrField()
