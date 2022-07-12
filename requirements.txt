@@ -2,3 +2,5 @@ Scrapy==2.6.1
 price-parser==0.3.4
 python-dotenv==0.20.0
 scrapy-splash==0.8.0
+scrapyd==1.3.0
+git+https://github.com/scrapy/scrapyd-client.git
