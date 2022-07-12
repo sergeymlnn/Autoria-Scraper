@@ -34,6 +34,7 @@ class AutoriaSpider(Spider):
         :raises ValueError: unless any input argument contains invalid value
         """
         super().__init__(*args, **kwargs)
+        _scrapyd_job_id = kwargs.pop("_job", "")
         self.args = SpiderArguments(**kwargs)
         self.settings = get_project_settings()
         with open(self.settings["LUA_CATEGORY_PAGE_SCRIPT"], "rb") as f1, \
@@ -130,7 +131,7 @@ class AutoriaSpider(Spider):
         has_crashes = car_info.get("Участь в ДТП", "").lower() == "був в дтп"
         remains_at_large = not car_info.get("В розшуку", "").lower() == "ні"
         pb_number = tech_cert_info.xpath("./span[@class='state-num ua']/text()").get()
-        vin_info = tech_cert_info.xpath("./span[@class='checked_ad label-check']/text()").get()
+        vin_info = tech_cert_info.xpath("./span[@class='checked_ad label-check']/text()").get("")
         is_vin_number_confirmed = "Перевірений VIN-код" in vin_info
         vin_number = tech_cert_info.xpath("./span[@class='label-vin']/text()").get()
 
