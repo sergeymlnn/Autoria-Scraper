@@ -72,7 +72,7 @@ class CarItem(ScrapyItem):
     engine_capacity: str = ScrapyStrField()
     last_repair: str = ScrapyStrField()
     last_repair_info: str = ScrapyStrField()
-    total_owners: int = ScrapyField(default=1)
+    total_owners: int = ScrapyIntegerField(default="1")
     remains_at_large: bool = ScrapyBooleanField()
     encumbrance_type: str = ScrapyStrField()
     exclusion_limitations: str = ScrapyStrField()
