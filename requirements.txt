@@ -1,5 +1,4 @@
-pydantic==1.8.2
-Scrapy==2.6.0
+Scrapy==2.6.1
 price-parser==0.3.4
 scrapy-splash==0.8.0
-python-dotenv==0.19.1
+python-dotenv==0.20.0
