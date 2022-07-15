@@ -1,33 +1,35 @@
-import time
-from os import environ
+from datetime import datetime
+from os import getenv
 from pathlib import Path
 
-from dotenv import dotenv_values
+# from dotenv import dotenv_values
 
 
+# Custom Spider Settings
+CURRENT_YEAR = datetime.now().year
+MIN_YEAR = CURRENT_YEAR - 50
+MIN_PRICE = 0.0
+CAR_TYPES = ("Всі", "Вживані", "Нові", "Під пригон")
+CAR_CATEGORIES = (
+    "Будь-який", "Легкові", "Мото", "Вантажівки", "Причепи", "Спецтехніка",
+    "Сільгосптехніка", "Автобуси", "Водний транспорт", "Повітряний транспорт",
+    "Автобудинки"
+)
+
+# Paths to the dirs & files of the project
+ROOT_PATH = (Path(__file__) / "../../").resolve()
+LUA_SCRIPTS_PATH = Path(__file__).parent.absolute() / "lua"
+LUA_CATEGORY_PAGE_SCRIPT = LUA_SCRIPTS_PATH / "category_page.lua"
+LUA_CAR_PAGE_SCRIPT = LUA_SCRIPTS_PATH / "car_page.lua"
+LUA_MAIN_PAGE_HANDLE_FORM = LUA_SCRIPTS_PATH / "main_page_handle_form.lua"
+
+# Scrapy's Spider Settings
 BOT_NAME = 'AutoRiaScraper'
 SPIDER_MODULES = ['AutoRiaScraper.spiders']
 NEWSPIDER_MODULE = 'AutoRiaScraper.spiders'
 
-# Root path to the project
-ROOT_PATH = (Path(__file__) / "../../").resolve()
-
-# Config filename and its absolute path
-ENV_CONFIG_FILENAME = ".env.config"
-ENV_CONFIG_PATH = ROOT_PATH / ENV_CONFIG_FILENAME
-
-# Uploading all available environment variables and ones from the config file
-ENV_CONFIG = {**environ, **dotenv_values(dotenv_path=ENV_CONFIG_PATH)}
-
-# Logging configuration
-LOG_LEVEL = "DEBUG"
-LOG_DIR = ROOT_PATH / "logs"
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-LOG_FILE = f'{LOG_DIR}/logs_{time.strftime("%Y-%m-%d")}.log'
-LOG_STDOUT = False
-
 # Splash configuration
-SPLASH_URL = ENV_CONFIG.get("SPLASH_URL", "http://127.0.0.1:8050")
+SPLASH_URL = getenv("SPLASH_URL", "http://127.0.0.1:8050")
 DOWNLOADER_MIDDLEWARES = {
     "scrapy_splash.SplashCookiesMiddleware": 723,
     "scrapy_splash.SplashMiddleware": 725,
@@ -36,9 +38,7 @@ DOWNLOADER_MIDDLEWARES = {
 SPIDER_MIDDLEWARES = {
     "scrapy_splash.SplashDeduplicateArgsMiddleware": 100,
 }
-DUPEFILTER_CLASS = "scrapy_splash.SplashAwareDupeFilter"
-HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
-SPLASH_LOG_400 = True
+DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -47,7 +47,7 @@ ROBOTSTXT_OBEY = False
 CONCURRENT_REQUESTS = 16
 
 # Configure a delay for requests for the same website (default: 0)
-DOWNLOAD_DELAY = 2.5
+DOWNLOAD_DELAY = 2
 
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 16
@@ -61,11 +61,8 @@ TELNETCONSOLE_ENABLED = False
 
 # Default Spider headers to be sent to the target website:
 DEFAULT_REQUEST_HEADERS = {
-    "Accept": "application/json, text/plain, */*",
+    "Accept": "*",
     "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en-US,uk-UA;q=0.8,uk;q=0.5,en;q=0.3",
-    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:93.0) Gecko/20100101 Firefox/93.0",
+    "Accept-Language": "en-GB,en;q=0.9",
+    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:100.0) Gecko/20100101 Firefox/100.0",
 }
-
-# Identifying spider with a custom UA until random ones are provided
-USER_AGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:93.0) Gecko/20100101 Firefox/93.0"
