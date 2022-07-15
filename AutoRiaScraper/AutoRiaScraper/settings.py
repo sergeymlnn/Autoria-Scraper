@@ -6,7 +6,8 @@ from pathlib import Path
 
 
 # Custom Spider Settings
-CURRENT_YEAR = datetime.now().year
+DT = datetime.now()
+CURRENT_YEAR = DT.year
 MIN_YEAR = CURRENT_YEAR - 50
 MIN_PRICE = 0.0
 CAR_TYPES = ("Всі", "Вживані", "Нові", "Під пригон")
@@ -22,6 +23,7 @@ LUA_SCRIPTS_PATH = Path(__file__).parent.absolute() / "lua"
 LUA_CATEGORY_PAGE_SCRIPT = LUA_SCRIPTS_PATH / "category_page.lua"
 LUA_CAR_PAGE_SCRIPT = LUA_SCRIPTS_PATH / "car_page.lua"
 LUA_MAIN_PAGE_HANDLE_FORM = LUA_SCRIPTS_PATH / "main_page_handle_form.lua"
+CARS_EXCEL_PATH = ROOT_PATH / f"{DT:%Y-%m-%d}-scraped_cars.xlsx"
 
 # Scrapy's Spider Settings
 BOT_NAME = 'AutoRiaScraper'
@@ -65,4 +67,9 @@ DEFAULT_REQUEST_HEADERS = {
     "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "en-GB,en;q=0.9",
     "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:100.0) Gecko/20100101 Firefox/100.0",
+}
+
+# Excel pipeline
+ITEM_PIPELINES = {
+    'AutoRiaScraper.pipelines.ItemsToExcelPipeline': 300,
 }
