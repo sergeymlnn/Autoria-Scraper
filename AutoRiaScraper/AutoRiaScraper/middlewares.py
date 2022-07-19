@@ -1,12 +1,24 @@
-# Define here the models for your spider middleware
-#
-# See documentation in:
-# https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import random
 
+import requests
 from scrapy import signals
+from scrapy_splash.request import SplashRequest
 
-# useful for handling different item types with a single interface
-from itemadapter import is_item, ItemAdapter
+from AutoRiaScraper.spiders.AutoRiaSpider import *
+
+
+# Fetching & decoding a list of random user agents from the link
+url = "https://raw.githubusercontent.com/sergeymlnn/Random-User-Agents-Database/main/useragents.txt"
+r = requests.get(url)
+RANDOM_USERAGENTS_LIST = tuple(ua.strip() for ua in r.text.split("\n"))
+
+
+class RandomUserAgentMiddleware:
+    """Provides a random UA to each performed request to be sent to the target website"""
+
+    def process_request(self, request: SplashRequest, spider: 'AutoriaSpider') -> None:
+        """Defines 'User-Agent' header with a random UA """
+        request.headers["User-Agent"] = random.choice(RANDOM_USERAGENTS_LIST)
 
 
 class AutoriascraperSpiderMiddleware:
