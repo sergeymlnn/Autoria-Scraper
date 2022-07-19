@@ -33,6 +33,8 @@ NEWSPIDER_MODULE = 'AutoRiaScraper.spiders'
 # Splash configuration
 SPLASH_URL = getenv("SPLASH_URL", "http://127.0.0.1:8050")
 DOWNLOADER_MIDDLEWARES = {
+    "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
+    "AutoRiaScraper.middlewares.RandomUserAgentMiddleware": 540,
     "scrapy_splash.SplashCookiesMiddleware": 723,
     "scrapy_splash.SplashMiddleware": 725,
     "scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware": 810,
