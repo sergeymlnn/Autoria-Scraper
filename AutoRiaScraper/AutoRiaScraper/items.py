@@ -30,7 +30,7 @@ ScrapyIntegerField = partial(
 )
 
 
-class CarItemsOnCategoryPage(ScrapyItem):
+class CarsListWithPagination(ScrapyItem):
     """Collects URLs on cars on a category page, category URL itself and URL to the next page"""
     current_page_url: str = ScrapyStrField()
     next_page_url: str = ScrapyStrField()
