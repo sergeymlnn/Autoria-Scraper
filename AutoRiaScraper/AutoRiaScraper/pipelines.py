@@ -1,52 +1,49 @@
 from itertools import count
-from typing import Union
+from pathlib import Path
+from typing import Any, Dict
 
 import xlsxwriter
+from scrapy import Spider
 from scrapy.crawler import Crawler
-
-from AutoRiaScraper.spiders.AutoRiaSpider import *
-
-
-Item = dict[str, Union[int, float, bool, str, list[str]]]
 
 
 class ItemsToExcelPipeline:
-    """Pipeline to save collected items into excel-file"""
+  """Pipeline to save collected items into excel-file"""
 
-    def __init__(self, cars_excel_path):
-        """
-        Initializes path to the excel-workbook & defines counter
-        to keep index of the latest inserted row
-        """
-        self.cars_excel_path = cars_excel_path
-        self.worksheet = None
-        self.workbook = None
-        self.counter = count(0)
+  def __init__(self, output_filepath: Path) -> None:
+    """
+    Creates an Excel workbook using path from the project settings,
+    in order to save the scraped cars in.
 
-    @classmethod
-    def from_crawler(cls, crawler: Crawler) -> 'ItemsToExcelPipeline':
-        """Reads path to the excel-workbook from the settings"""
-        return cls(
-            cars_excel_path=crawler.settings.get("CARS_EXCEL_PATH")
-        )
+    :param output_filepath: path to the file to save scraped cars in
+    """
+    self.output_filepath = output_filepath
+    self.worksheet = None
+    self.workbook = None
+    self.counter = count(0)
 
-    def open_spider(self, spider: 'AutoriaSpider') -> None:
-        """Initializes and opens an excel-workbook to save scraped items in"""
-        self.workbook = xlsxwriter.Workbook(self.cars_excel_path)
-        self.worksheet = self.workbook.add_worksheet()
+  @classmethod
+  def from_crawler(cls, crawler: Crawler) -> 'ItemsToExcelPipeline':
+    """Sets path to the Excel workbook from the project settings"""
+    return cls(output_filepath=crawler.settings.get("OUTPUT_FILEPATH"))
 
-    def close_spider(self, spider: 'AutoriaSpider') -> None:
-        """Closes the excel-workbook at the end of the scraping process"""
-        self.workbook.close()
+  def open_spider(self, spider: Spider) -> None:
+    """Initializes & opens the Excel workbook in order to save scraped items in"""
+    self.workbook = xlsxwriter.Workbook(self.output_filepath)
+    self.worksheet = self.workbook.add_worksheet()
 
-    def process_item(self, item: Item, spider: 'AutoriaSpider') -> None:
-        """Writes collected items into excel-workbook"""
-        headers = list(item.keys())
-        _counter = next(self.counter)
-        if _counter == 0:
-            for col in headers:
-                self.worksheet.write(_counter, headers.index(col), col)
-        else:
-            for k, v in item.items():
-                self.worksheet.write(_counter, headers.index(k), v)
-            next(self.counter)
+  def close_spider(self, spider: Spider) -> None:
+    """Closes the Excel workbook at the end of the scraping process"""
+    self.workbook.close()
+
+  def process_item(self, item: Dict[str, Any], spider: Spider) -> None:
+    """Saves info about scraped cars into Excel file"""
+    headers = list(item.keys())
+    _counter = next(self.counter)
+    if _counter == 0:
+      for col in headers:
+        self.worksheet.write(_counter, headers.index(col), col)
+    else:
+      for k, v in item.items():
+        self.worksheet.write(_counter, headers.index(k), v)
+      next(self.counter)
