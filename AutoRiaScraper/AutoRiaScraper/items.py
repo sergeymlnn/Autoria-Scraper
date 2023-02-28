@@ -1,102 +1,75 @@
 from functools import partial
-from typing import List, Optional
+from typing import Optional
 
 from itemloaders.processors import MapCompose, TakeFirst
+from price_parser import parse_price
 from scrapy import Item as ScrapyItem, Field as ScrapyField
 
-from AutoRiaScraper.utils import (
-    extract_price_from_text,
-    extract_year_from_text,
-    extract_date_from_text,
-    extract_integer_from_text,
+
+def strip_str(s: str) -> str:
+  """
+  Explicitly converts the input value into str,
+  removes leading & trailing whitespaces, & returns the processed
+  value.
+
+  Note: if the input value is falsy, an empty str will be returned !
+
+  :param s: input value to be interpreted as str 
+  :return: str without leading & trailing whitespaces
+  """
+  return "" if not str else str(s).strip()
+
+
+def str_to_float(v: str) -> Optional[float]:
+  """
+  Converts the input str value into float & returns it.
+
+  Note: 'None' will be returned if the input value can not
+        be interpreted as a float number !
+
+  :param v: str to be converted into float
+  :return: input value as a float number or 'None'
+  """
+  return parse_price(str(v)).amount_float
+  
+
+def str_to_int(v: str) -> Optional[int]:
+  """
+  Converts the input str value into float & returns it.
+
+  Note: 'None' will be returned if the input value can not
+        be interpreted as an integer !
+
+  :param v: str to be converted into an integer
+  :return: input value as an integer or 'None'
+  """
+  try:
+    return int("".join(x for x in str(v) if x.isdigit()))
+  except ValueError:
+    return None
+  
+
+# modified 'scrapy.Field' to be used with str values
+ScrapyStrField = partial(ScrapyField,
+  input_processor=MapCompose(strip_str),
+  output_processor=TakeFirst()
+)
+
+# modified 'scrapy.Field' to be used with float values
+ScrapyFloatField = partial(ScrapyField,
+  input_processor=MapCompose(str_to_float),
+  output_processor=TakeFirst()
+)
+
+# modified 'scrapy.Field' to be used with integer values
+ScrapyIntField = partial(ScrapyField,
+  input_processor=MapCompose(str_to_int),
+  output_processor=TakeFirst()
 )
 
 
-# Aliases
-ScrapyStrField = partial(
-    ScrapyField,
-    input_processor=MapCompose(lambda s: s if s is not None else ""),
-    output_processor=TakeFirst()
-)
-ScrapyBooleanField = partial(
-    ScrapyField,
-    input_processor=MapCompose(bool),
-    output_processor=TakeFirst()
-)
-ScrapyIntegerField = partial(
-    ScrapyField,
-    input_processor=MapCompose(extract_integer_from_text),
-    output_processor=TakeFirst(),
-)
-
-
-class CarsListWithPagination(ScrapyItem):
-    """Collects URLs on cars on a category page, category URL itself and URL to the next page"""
-    current_page_url: str = ScrapyStrField()
-    next_page_url: str = ScrapyStrField()
-    car_urls_on_page: List[str] = ScrapyField(default=[])
-
-
-class CarSellerItem(ScrapyItem):
-    """Collects information about seller of a particular car"""
-    name: str = ScrapyStrField()
-    last_online_time: str = ScrapyStrField()
-    location: str = ScrapyStrField()
-    verified_by_bank: bool = ScrapyBooleanField()
-    phone_verified: bool = ScrapyBooleanField()
-    signed_in_date: str = ScrapyStrField(input_processor=MapCompose(extract_date_from_text))
-    reputation: float = ScrapyField(default=0.0)
-    is_company: bool = ScrapyBooleanField()
-    company_location: str = ScrapyStrField()
-    sold_cars: Optional[int] = ScrapyIntegerField()
-    total_active_ads: Optional[int] = ScrapyIntegerField()
-    total_verified_active_ads: Optional[int] = ScrapyIntegerField()
-    company_website: str = ScrapyStrField()
-
-
-class CarSaleAdItem(ScrapyItem):
-    """Collects information about advertisement of a particular car on the website"""
-    id: str = ScrapyStrField()
-    created_at: str = ScrapyStrField()
-    views: Optional[int] = ScrapyIntegerField()
-    saved: Optional[int] = ScrapyIntegerField()
-
-
-class CarItem(ScrapyItem):
-    """Collects full information about car on its page"""
-    link: str = ScrapyStrField()
-    model: str = ScrapyStrField()
-    brand: str = ScrapyStrField()
-    year: int = ScrapyIntegerField(input_processor=MapCompose(extract_year_from_text))
-    color: str = ScrapyStrField()
-    engine_capacity: str = ScrapyStrField()
-    last_repair: str = ScrapyStrField()
-    last_repair_info: str = ScrapyStrField()
-    total_owners: int = ScrapyIntegerField(default="1")
-    remains_at_large: bool = ScrapyBooleanField()
-    encumbrance_type: str = ScrapyStrField()
-    exclusion_limitations: str = ScrapyStrField()
-    official_mileage: float = ScrapyField(default=0.0)
-    mileage_declared_by_seller: float = ScrapyStrField()
-    mileage_fixation_date: str = ScrapyStrField()
-    mileage_fixation_source: str = ScrapyStrField()
-    has_crashes: bool = ScrapyBooleanField()
-    crash_info: str = ScrapyStrField()
-    car_public_number: str = ScrapyStrField()
-    VIN: str = ScrapyStrField()
-    is_VIN_confirmed: bool = ScrapyBooleanField()
-    tags: List[str] = ScrapyField(default=[])
-    images: List[str] = ScrapyField(default=[])
-    body_type: str = ScrapyStrField()
-    transmission_type: str = ScrapyStrField()
-    drive_unit: str = ScrapyStrField()
-    description: str = ScrapyStrField()
-    safety: str = ScrapyStrField()
-    comfort: str = ScrapyStrField()
-    multimedia: str = ScrapyStrField()
-    price: float = ScrapyField(
-        default=0.0,
-        input_processor=MapCompose(extract_price_from_text),
-        output_processor=TakeFirst(),
-    )
-    condition: str = ScrapyStrField()
+class Car(ScrapyItem):
+  """Scrapy Item used to collect info about specific car"""
+  name: str = ScrapyStrField()
+  year: int = ScrapyIntField()
+  price: float =  ScrapyFloatField()
