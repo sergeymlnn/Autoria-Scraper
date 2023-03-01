@@ -73,3 +73,4 @@ class Car(ScrapyItem):
   name: str = ScrapyStrField()
   year: int = ScrapyIntField()
   price: float =  ScrapyFloatField()
+  url: str = ScrapyStrField()
