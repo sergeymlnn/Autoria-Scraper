@@ -1,24 +1,20 @@
-from typing import Any, Dict, Iterator, Optional
+from typing import Iterator, Optional
 
 from scrapy import Spider
 from scrapy.http.response.html import HtmlResponse
 from scrapy.loader import ItemLoader
 from scrapy_splash import SplashRequest
+from scrapy.settings import Settings
 from scrapy.shell import inspect_response
 from scrapy.utils.project import get_project_settings
 
-from AutoRiaScraper.items import (
-    CarsListWithPagination,
-    CarSellerItem,
-    CarSaleAdItem,
-    CarItem,
-)
+from AutoRiaScraper.args import SpiderArgs
+from AutoRiaScraper.items import Car
 from AutoRiaScraper.utils import gen_next_page_url
-from AutoRiaScraper.SpiderArguments import SpiderArguments
 
 
-class AutoriaSpider(Spider):
-    """Parse info about all types of cars based on advanced filters"""
+class AutoRiaSpider(Spider):
+    """Spider to parse info about cars from https://auto.ria.com/"""
     name = "autoria_spider"
     allowed_domains = ["auto.ria.com"]
     start_urls = ["https://auto.ria.com/uk/advanced-search"]
@@ -30,80 +26,93 @@ class AutoriaSpider(Spider):
         2) category pages;
         3) car pages.
 
-      Also defines a property to get access to the project settings.
+      Also provides an attr to get access to the project settings.
 
       :param args: input spider args
       :param settings: project settings
-      :param lua_main_page_handle_form: path to LUA-script used to parse filters on the main page
-      :param lua_category_page_script: path to LUA-script used with category pages
-      :param lua_car_page_script: path to LUA-script used with car pages
+      :param lua_main_page_handle_form: LUA-script used to handle advanced search filters
+      :param lua_category_page_script: LUA-script used to handle category pages
+      :param lua_car_page_script: LUA-script used to handle car pages
       :raises ValueError: unless any input argument is valid
       """
       super().__init__(*args, **kwargs)
       _scrapyd_job_id = kwargs.pop("_job", "")
-      self.args = SpiderArguments(**kwargs)
-      self.settings = get_project_settings()
+      self.args = SpiderArgs(**kwargs)
+      self.settings: Settings = get_project_settings()
       with open(self.settings["LUA_CATEGORY_PAGE_SCRIPT"], "rb") as f1, \
            open(self.settings["LUA_CAR_PAGE_SCRIPT"], "rb") as f2, \
            open(self.settings["LUA_MAIN_PAGE_HANDLE_FORM"], "rb") as f3:
         self.lua_category_page_script = f1.read().decode("utf-8")
         self.lua_car_page_script = f2.read().decode("utf-8")
         self.lua_main_page_handle_form = f3.read().decode("utf-8")
+      
+      breakpoint()
 
     def start_requests(self) -> Iterator[SplashRequest]:
-      """Parses form with advanced filters using values from input spider args"""
+      """
+      Performs a request to the initial URL & configures
+      the form with the search-filters according to the input
+      spider args.
+
+      Once the filters are set it submits the form, so it gets
+      redirected to the page with the results of the search. 
+
+      Note: input spider args containing None-values are ignored.
+      """
+      form_args = {k: v for k, v in self.args.__dict__.items() if v}
       yield SplashRequest(
         url=self.start_urls[0],
         endpoint="execute",
-        callback=self.parse_cars_list,
-        args={
-          "lua_source": self.lua_main_page_handle_form,
-          # Pass input args to the LUA-script
-          "car_category": self.args.category,
-          "car_brand": self.args.brand,
-        },
+        callback=self.parse_cars,
+        args={"lua_source": self.lua_main_page_handle_form, **form_args},
       )
 
-    def parse_cars_list(self, response: HtmlResponse, **kwargs) -> Optional[Iterator[SplashRequest]]:
+    def parse_cars(self, response: HtmlResponse, **kwargs) -> Optional[Iterator[SplashRequest]]:
       """
-      Iterates over a list of cars and performs splash-requests
-      to each individual car, plus preserves pagination.
+      Iterates over a list of cars, generated after submitting the form
+      with filters, preserving pagination & performs requests to each car
+      individually.
+
+      Note (1): after submitting the form, the actual URL of the page
+                can not be extract by using 'response.url' due to AJAX,
+                so we explicitly extract it using XPATH.
+                Though after pagination can...
+
+      Note (2): we use a custom function to generate a URL to the next page
+                in order to not make Splash to scroll the current page to
+                the bottom to extract a URL to the next page.
       """
       # inspect_response(response, self)
-      meta: Dict[str, Any] = response.meta
-      meta_info: Dict[str, str] = meta.get("info", {})
-      current_page_url = meta_info.get("current_page_url", response.xpath("//a[@class='selectLang']/@href").get())
-
-      item = ItemLoader(item=CarsListWithPagination(), response=response)
-      item.add_value("current_page_url", current_page_url)
-      item.add_value("next_page_url", gen_next_page_url(current_page_url))
-      item.add_xpath("car_urls_on_page", "//div[@class='item ticket-title']/a/@href")
-      loaded_item: CarsListWithPagination = item.load_item()
-
-      if not loaded_item["car_urls_on_page"]:
-        self.logger.warning(f"No cars on page {current_page_url}")
+      current_page_url = response.url if "referer" in response.meta else \
+        response.xpath("//a[@class='selectLang']/@href").get(response.url)
+      cars = response.xpath("//div[@class='item ticket-title']/a/@href")
+      if not cars:
+        self.logger.critical(f"Cars not found in {current_page_url}")
         return
 
-      # Perform requests to the car pages
-      for car_url in loaded_item["car_urls_on_page"]:
-        yield SplashRequest(
-          url=car_url,
+      # Request meta
+      meta = {"referer": current_page_url}
+
+      # Performing requests to the car pages
+      self.logger.info(f"Found {len(cars)} cars in {current_page_url}")
+      car_urls = map(response.urljoin, cars.getall())
+      for url in car_urls:
+        yield SplashRequest(url,
           endpoint="execute",
           args={"lua_source": self.lua_car_page_script},
           cache_args=["lua_source"],
           callback=self.parse_car_page,
-          meta={"info": {"category_url": current_page_url}}
+          meta=meta
         )
-        break
 
-      # Perform a request to the next page 
-      yield SplashRequest(
-        url=loaded_item["next_page_url"],
+      # Pagination
+      next_page_url = gen_next_page_url(current_page_url)
+      yield SplashRequest(next_page_url,
         endpoint="execute",
         args={"lua_source": self.lua_category_page_script},
         cache_args=["lua_source"],
-        callback=self.parse_cars_list,
-        meta={"info": {"current_page_url": loaded_item["next_page_url"]}}
+        callback=self.parse_cars,
+        meta=meta
       )
 
     def parse_car_page(self, response: HtmlResponse) -> None:
