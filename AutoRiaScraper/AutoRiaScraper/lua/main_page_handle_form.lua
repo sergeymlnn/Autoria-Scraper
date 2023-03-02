@@ -23,13 +23,13 @@ function main(splash, args)
   splash:wait(3)
 
   -- select the type of vehicles to look for
-  local carCategory = splash.args.car_category
+  local carCategory = splash.args.category
   local carCategorySelect = splash:select('#at-category')
   carCategorySelect:send_text(carCategory)
   splash:wait(0.3)
 
-  -- select brand of the vehicle (from dynamic select menu)
-  local carBrand = splash.args.car_brand
+  -- select brand of the vehicle (from dynamic select-menu)
+  local carBrand = splash.args.brand
   local carBrandSelect = splash:select('#autocompleteInput-brand-0')
   carBrandSelect:send_text(carBrand)
   splash:wait(1)
@@ -39,7 +39,7 @@ function main(splash, args)
   -- scroll to the bottom to make 'Search' button visible
   splash:runjs("window.scrollTo(0, document.body.scrollHeight);")
 
-  -- Submitting the form
+  -- submit the form
   local submitFormBtn = splash:select('button > .icon-search')
   submitFormBtn:mouse_click()
 
