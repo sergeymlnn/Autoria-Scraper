@@ -70,7 +70,8 @@ ScrapyIntField = partial(ScrapyField,
 
 class Car(ScrapyItem):
   """Scrapy Item used to collect info about specific car"""
-  name: str = ScrapyStrField()
+  brand: str = ScrapyStrField()
+  model: str = ScrapyStrField()
   year: int = ScrapyIntField()
   price: float =  ScrapyFloatField()
   url: str = ScrapyStrField()
