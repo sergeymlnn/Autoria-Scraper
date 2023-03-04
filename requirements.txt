@@ -1,4 +1,5 @@
 flake8==6.0.0
+mypy==1.0.1
 Scrapy==2.8.0
 price-parser==0.3.4
 python-dotenv==0.20.0
