@@ -1,10 +1,11 @@
 from itertools import count
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
-import xlsxwriter
 from scrapy import Spider
 from scrapy.crawler import Crawler
+from xlsxwriter.workbook import Workbook
+from xlsxwriter.worksheet import Worksheet
 
 
 class ItemsToExcelPipeline:
@@ -17,10 +18,10 @@ class ItemsToExcelPipeline:
 
     :param output_filepath: path to the file to save scraped cars in
     """
-    self.output_filepath = output_filepath
-    self.worksheet = None
-    self.workbook = None
-    self.counter = count(0)
+    self.workbook: Workbook
+    self.worksheet: Worksheet
+    self.output_filepath: Path = output_filepath
+    self.counter: Iterator[int] = count(0)
 
   @classmethod
   def from_crawler(cls, crawler: Crawler) -> 'ItemsToExcelPipeline':
@@ -29,7 +30,7 @@ class ItemsToExcelPipeline:
 
   def open_spider(self, spider: Spider) -> None:
     """Inits & opens the Excel workbook in order to save scraped items in"""
-    self.workbook = xlsxwriter.Workbook(self.output_filepath)
+    self.workbook = Workbook(self.output_filepath)
     self.worksheet = self.workbook.add_worksheet()
 
   def close_spider(self, spider: Spider) -> None:
