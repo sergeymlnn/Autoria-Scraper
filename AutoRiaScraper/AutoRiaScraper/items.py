@@ -14,7 +14,7 @@ def strip_str(s: str) -> str:
 
   Note: if the input value is falsy, an empty str will be returned !
 
-  :param s: input value to be interpreted as str 
+  :param s: input value to be interpreted as str
   :return: str without leading & trailing whitespaces
   """
   return "" if not str else str(s).strip()
@@ -31,7 +31,7 @@ def str_to_float(v: str) -> Optional[float]:
   :return: input value as a float number or 'None'
   """
   return parse_price(str(v)).amount_float
-  
+
 
 def str_to_int(v: str) -> Optional[int]:
   """
@@ -47,22 +47,25 @@ def str_to_int(v: str) -> Optional[int]:
     return int("".join(x for x in str(v) if x.isdigit()))
   except ValueError:
     return None
-  
+
 
 # modified 'scrapy.Field' to be used with str values
-ScrapyStrField = partial(ScrapyField,
+ScrapyStrField = partial(
+  ScrapyField,
   input_processor=MapCompose(strip_str),
   output_processor=TakeFirst()
 )
 
 # modified 'scrapy.Field' to be used with float values
-ScrapyFloatField = partial(ScrapyField,
+ScrapyFloatField = partial(
+  ScrapyField,
   input_processor=MapCompose(str_to_float),
   output_processor=TakeFirst()
 )
 
 # modified 'scrapy.Field' to be used with integer values
-ScrapyIntField = partial(ScrapyField,
+ScrapyIntField = partial(
+  ScrapyField,
   input_processor=MapCompose(str_to_int),
   output_processor=TakeFirst()
 )
@@ -73,5 +76,5 @@ class Car(ScrapyItem):
   brand: str = ScrapyStrField()
   model: str = ScrapyStrField()
   year: int = ScrapyIntField()
-  price: float =  ScrapyFloatField()
+  price: float = ScrapyFloatField()
   url: str = ScrapyStrField()

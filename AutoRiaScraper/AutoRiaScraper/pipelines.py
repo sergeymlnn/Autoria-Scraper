@@ -28,7 +28,7 @@ class ItemsToExcelPipeline:
     return cls(output_filepath=crawler.settings.get("OUTPUT_FILEPATH"))
 
   def open_spider(self, spider: Spider) -> None:
-    """Initializes & opens the Excel workbook in order to save scraped items in"""
+    """Inits & opens the Excel workbook in order to save scraped items in"""
     self.workbook = xlsxwriter.Workbook(self.output_filepath)
     self.worksheet = self.workbook.add_worksheet()
 

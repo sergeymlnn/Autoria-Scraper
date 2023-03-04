@@ -1,11 +1,13 @@
+from sys import exit
 from typing import Iterator, Optional
 
+import requests
 from scrapy import Spider
 from scrapy.http.response.html import HtmlResponse
 from scrapy.loader import ItemLoader
 from scrapy_splash import SplashRequest
 from scrapy.settings import Settings
-from scrapy.shell import inspect_response
+# from scrapy.shell import inspect_response
 from scrapy.utils.project import get_project_settings
 
 from AutoRiaScraper.args import SpiderArgs
@@ -21,32 +23,45 @@ class AutoRiaSpider(Spider):
 
     def __init__(self, *args, **kwargs) -> None:
       """
-      Reads LUA-scripts to be used with a different types of webpages using Splash:
+      Reads LUA-scripts used with a different types of webpages using Splash:
         1) form on the main page to parse filters;
         2) category pages;
         3) car pages.
 
       Also provides an attr to get access to the project settings.
 
+      Note: if the connection with Splash is refused, the process
+            will be over. Check logs for more details.
+
       :param args: input spider args
       :param settings: project settings
-      :param lua_main_page_handle_form: LUA-script used to handle advanced search filters
-      :param lua_category_page_script: LUA-script used to handle category pages
-      :param lua_car_page_script: LUA-script used to handle car pages
+      :param lua_main_page_handle_form: LUA-script to handle advanced search
+      :param lua_category_page_script: LUA-script to handle category pages
+      :param lua_car_page_script: LUA-script to handle car pages
       :raises ValueError: unless any input argument is valid
       """
       super().__init__(*args, **kwargs)
-      _scrapyd_job_id = kwargs.pop("_job", "")
-      self.args = SpiderArgs(**kwargs)
+      _scrapyd_job_id = kwargs.pop("_job", "")  # noqa
       self.settings: Settings = get_project_settings()
+
+      # Verify connection with Splash
+      splash_url = self.settings["SPLASH_URL"]
+      try:
+        requests.get(splash_url)
+      except requests.exceptions.ConnectionError as err:
+        self.logger.critical(f"Can't connect to Splash ({splash_url}). Reason: {err}")
+        exit(1)
+
+      # Declare & validate input spider args
+      self.args = SpiderArgs(**kwargs)
+
+      # Read LUA-scripts to be used with SplashRequests
       with open(self.settings["LUA_CATEGORY_PAGE_SCRIPT"], "rb") as f1, \
            open(self.settings["LUA_CAR_PAGE_SCRIPT"], "rb") as f2, \
            open(self.settings["LUA_MAIN_PAGE_HANDLE_FORM"], "rb") as f3:
         self.lua_category_page_script = f1.read().decode("utf-8")
         self.lua_car_page_script = f2.read().decode("utf-8")
         self.lua_main_page_handle_form = f3.read().decode("utf-8")
-      
-      breakpoint()
 
     def start_requests(self) -> Iterator[SplashRequest]:
       """
@@ -55,7 +70,7 @@ class AutoRiaSpider(Spider):
       spider args.
 
       Once the filters are set it submits the form, so it gets
-      redirected to the page with the results of the search. 
+      redirected to the page with the results of the search.
 
       Note: input spider args containing None-values are ignored.
       """
@@ -97,7 +112,8 @@ class AutoRiaSpider(Spider):
       self.logger.info(f"Found {len(cars)} cars in {current_page_url}")
       car_urls = map(response.urljoin, cars.getall())
       for url in car_urls:
-        yield SplashRequest(url,
+        yield SplashRequest(
+          url,
           endpoint="execute",
           args={"lua_source": self.lua_car_page_script},
           cache_args=["lua_source"],
@@ -107,7 +123,8 @@ class AutoRiaSpider(Spider):
 
       # Pagination
       next_page_url = gen_next_page_url(current_page_url)
-      yield SplashRequest(next_page_url,
+      yield SplashRequest(
+        next_page_url,
         endpoint="execute",
         args={"lua_source": self.lua_category_page_script},
         cache_args=["lua_source"],
