@@ -21,7 +21,7 @@ class AutoRiaSpider(Spider):
     allowed_domains = ["auto.ria.com"]
     start_urls = ["https://auto.ria.com/uk/advanced-search"]
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: str, **kwargs: int) -> None:
       """
       Reads LUA-scripts used with a different types of webpages using Splash:
         1) form on the main page to parse filters;
@@ -82,7 +82,7 @@ class AutoRiaSpider(Spider):
         args={"lua_source": self.lua_main_page_handle_form, **form_args},
       )
 
-    def parse_cars(self, response: HtmlResponse, **kwargs) -> Optional[Iterator[SplashRequest]]:
+    def parse_cars(self, response: HtmlResponse) -> Optional[Iterator[SplashRequest]]:
       """
       Iterates over a list of cars, generated after submitting the form
       with filters, preserving pagination & performs requests to each car
@@ -132,7 +132,7 @@ class AutoRiaSpider(Spider):
         meta=meta,
       )
 
-    def parse_car(self, response: HtmlResponse) -> None:
+    def parse_car(self, response: HtmlResponse) -> Iterator[Car]:
       """
       Collects info about specific car.
 
