@@ -1,9 +1,9 @@
-from typing import List, Final, Optional
+from typing import List, Optional
 
 from attrs import define, field, validators
 
 
-VEHICLE_CATEGORIES: Final[List[str]] = [
+VEHICLE_CATEGORIES: List[str] = [
   "Будь-який", "Легкові", "Мото", "Вантажівки", "Причепи", "Спецтехніка",
   "Сільгосптехніка", "Автобуси", "Водний транспорт", "Повітряний транспорт",
   "Автобудинки",
