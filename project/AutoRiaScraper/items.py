@@ -17,7 +17,7 @@ def strip_str(s: str) -> str:
   :param s: input value to be interpreted as str
   :return: str without leading & trailing whitespaces
   """
-  return "" if not str else str(s).strip()
+  return "" if not s else str(s).strip()
 
 
 def str_to_float(v: str) -> Optional[float]:
