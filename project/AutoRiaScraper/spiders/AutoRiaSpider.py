@@ -21,7 +21,7 @@ class AutoRiaSpider(Spider):
     allowed_domains = ["auto.ria.com"]
     start_urls = ["https://auto.ria.com/uk/advanced-search"]
 
-    def __init__(self, *args: str, **kwargs: int) -> None:
+    def __init__(self, *args: str, **kwargs: str) -> None:
       """
       Reads LUA-scripts used with a different types of webpages using Splash:
         1) form on the main page to parse filters;
