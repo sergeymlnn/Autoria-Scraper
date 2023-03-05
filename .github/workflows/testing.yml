@@ -15,6 +15,7 @@ jobs:
       - name: install python ${{ matrix.python-version }}
         uses: MatteoH2O1999/setup-python@v1
         with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
           python-version: ${{ matrix.python-version }}
       - name: install deps
         run: |
