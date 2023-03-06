@@ -3,6 +3,8 @@ name: code checks
 on:
   push:
     branches: [ main ]
+    paths:
+      - project/**
   pull_request:
     branches: [ main ]
 
