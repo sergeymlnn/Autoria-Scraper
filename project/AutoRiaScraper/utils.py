@@ -1,5 +1,5 @@
 import re
-from urllib.parse import urlparse, urlunparse, urlencode, parse_qsl
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 
 def gen_next_page_url(url: str, param: str = "page") -> str:

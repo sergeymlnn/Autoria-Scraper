@@ -3,7 +3,7 @@ from typing import Optional
 
 from itemloaders.processors import MapCompose, TakeFirst
 from price_parser import parse_price
-from scrapy import Item as ScrapyItem, Field as ScrapyField
+from scrapy import Field as ScrapyField, Item as ScrapyItem
 
 
 def strip_str(s: str) -> str:

@@ -5,10 +5,10 @@ import requests
 from scrapy import Spider
 from scrapy.http.response.html import HtmlResponse
 from scrapy.loader import ItemLoader
-from scrapy_splash import SplashRequest
 from scrapy.settings import Settings
 # from scrapy.shell import inspect_response
 from scrapy.utils.project import get_project_settings
+from scrapy_splash import SplashRequest
 
 from AutoRiaScraper.args import SpiderArgs
 from AutoRiaScraper.items import Car
