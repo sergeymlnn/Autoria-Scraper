@@ -57,8 +57,8 @@ class AutoRiaSpider(Spider):
 
     # Read LUA-scripts to be used with SplashRequests
     with open(self.settings["LUA_CATEGORY_PAGE_SCRIPT"], "rb") as f1, \
-            open(self.settings["LUA_CAR_PAGE_SCRIPT"], "rb") as f2, \
-            open(self.settings["LUA_MAIN_PAGE_HANDLE_FORM"], "rb") as f3:
+         open(self.settings["LUA_CAR_PAGE_SCRIPT"], "rb") as f2, \
+         open(self.settings["LUA_MAIN_PAGE_HANDLE_FORM"], "rb") as f3:
       self.lua_category_page_script = f1.read().decode("utf-8")
       self.lua_car_page_script = f2.read().decode("utf-8")
       self.lua_main_page_handle_form = f3.read().decode("utf-8")
@@ -99,7 +99,7 @@ class AutoRiaSpider(Spider):
     """
     # inspect_response(response, self)
     current_page_url = response.url if "referer" in response.meta else \
-        response.xpath("//a[@class='selectLang']/@href").get(response.url)
+      response.xpath("//a[@class='selectLang']/@href").get(response.url)
     cars = response.xpath("//div[@class='item ticket-title']/a/@href")
     if not cars:
       self.logger.critical(f"Cars not found in {current_page_url}")
