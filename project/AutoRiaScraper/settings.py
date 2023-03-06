@@ -31,9 +31,6 @@ SPIDER_MIDDLEWARES = {
 }
 DUPEFILTER_CLASS = "scrapy_splash.SplashAwareDupeFilter"
 
-# Obey robots.txt rules
-ROBOTSTXT_OBEY = False
-
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 16
 
