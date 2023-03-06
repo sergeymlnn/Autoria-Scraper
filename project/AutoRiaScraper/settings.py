@@ -52,7 +52,7 @@ TELNETCONSOLE_ENABLED = False
 
 # Default Spider headers to be sent to the target website:
 DEFAULT_REQUEST_HEADERS = {
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7", # noqa
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",  # noqa
   "Accept-Encoding": "gzip, deflate, br",
   "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8,ru;q=0.7",
 }
