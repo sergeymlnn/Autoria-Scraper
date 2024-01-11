@@ -4,7 +4,7 @@ from urllib.parse import urlparse, urlunparse, urlencode, parse_qsl
 
 def gen_next_page_url(url: str, param: str = "page") -> str:
   """
-  Generates a URL to the next page using a GET-param named 'page',
+  Generate a URL to the next page using GET-param called 'page',
   incrementing its current value or setting a default one unless
   the param is defined in the URL.
 
@@ -15,9 +15,9 @@ def gen_next_page_url(url: str, param: str = "page") -> str:
     Input URL: https://auto.ria.com/uk/search/?categories.main.id=1&page=4
     Output URL: https://auto.ria.com/uk/search/?categories.main.id=1&page=5
 
-  :param url: URL to increment 'page' param or set the default one for
-  :param param: name of the GET-param (page) to interact with
-  :return: URL with the incremented or default value of the GET-param 'page'
+  :param url: URL to update/set the page-param in
+  :param param: name of the page-param
+  :return: URL with the updated/set the page-param
   """
   url_parts = list(urlparse(url))
   page_param = re.search(fr"{param}=\d+", url_parts[4])
