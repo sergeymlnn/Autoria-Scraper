@@ -4,15 +4,16 @@ from attrs import define, field, validators
 
 
 VEHICLE_CATEGORIES: List[str] = [
-  "Будь-який", "Легкові", "Мото", "Вантажівки", "Причепи", "Спецтехніка",
-  "Сільгосптехніка", "Автобуси", "Водний транспорт", "Повітряний транспорт",
+  "Будь-який", "Легкові", "Мото", "Вантажівки",
+  "Причепи", "Спецтехніка", "Сільгосптехніка",
+  "Автобуси", "Водний транспорт", "Повітряний транспорт",
   "Автобудинки",
 ]
 
 
 @define(slots=False, frozen=True)
 class SpiderArgs:
-  """Provides & parses input spider arguments"""
+  """Input spider arguments"""
   brand: str = field()
   model: Optional[str] = field(default=None)
   category: str = field(

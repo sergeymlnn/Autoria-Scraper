@@ -7,7 +7,7 @@ from scrapy_splash.request import SplashRequest
 
 
 def fetch_random_useragents() -> List[str]:
-  """Fetches & returns a list of random User-Agents from Github"""
+  """Fetche a list of random User-Agents from Github"""
   r = requests.get(
     "https://raw.githubusercontent.com/sergeymlnn/Random-User-Agents-Database/main/useragents.txt"
   )
@@ -16,9 +16,9 @@ def fetch_random_useragents() -> List[str]:
 
 
 class RandomUserAgentMiddleware:
-  """Custom middleware to set a random User-Agent to each request"""
+  """Middleware to set a random User-Agent to each request"""
   __useragents: List[str] = fetch_random_useragents()
 
   def process_request(self, request: SplashRequest, spider: Spider) -> None:
-    """Sets a random User-Agent into corresponding request header"""
+    """Set a random User-Agent into the request header"""
     request.headers["User-Agent"] = choice(self.__useragents)
