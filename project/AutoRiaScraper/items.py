@@ -8,40 +8,39 @@ from scrapy import Item as ScrapyItem, Field as ScrapyField
 
 def strip_str(s: str) -> str:
   """
-  Explicitly converts the input value into str,
-  removes leading & trailing whitespaces, & returns the processed
-  value.
+  Convert the given value into str, remove leading & trailing
+  whitespaces and return the value.
 
-  Note: if the input value is falsy, an empty str will be returned !
+  Note: if the input value is falsy, an empty str will be returned!
 
-  :param s: input value to be interpreted as str
-  :return: str without leading & trailing whitespaces
+  :param s: value to process
+  :return: processed value or empty str
   """
   return "" if not s else str(s).strip()
 
 
 def str_to_float(v: str) -> Optional[float]:
   """
-  Converts the input str value into float & returns it.
+  Convert the given str into float.
 
-  Note: 'None' will be returned if the input value can not
-        be interpreted as a float number !
+  Note: 'None' will be returned if the input value can't
+        be interpreted as a float number!
 
-  :param v: str to be converted into float
-  :return: input value as a float number or 'None'
+  :param v: value to process
+  :return: processed value or None
   """
   return parse_price(str(v)).amount_float
 
 
 def str_to_int(v: str) -> Optional[int]:
   """
-  Converts the input str value into float & returns it.
+  Convert the given str into integer.
 
-  Note: 'None' will be returned if the input value can not
-        be interpreted as an integer !
+  Note: 'None' will be returned if the input value can't
+        be interpreted as an integer number!
 
-  :param v: str to be converted into an integer
-  :return: input value as an integer or 'None'
+  :param v: value to process
+  :return: processed value or None
   """
   try:
     return int("".join(x for x in str(v) if x.isdigit()))
@@ -49,21 +48,21 @@ def str_to_int(v: str) -> Optional[int]:
     return None
 
 
-# modified 'scrapy.Field' to be used with str values
+# modified 'scrapy.Field' to be used with str-values
 ScrapyStrField = partial(
   ScrapyField,
   input_processor=MapCompose(strip_str),
   output_processor=TakeFirst()
 )
 
-# modified 'scrapy.Field' to be used with float values
+# modified 'scrapy.Field' to be used with float-values
 ScrapyFloatField = partial(
   ScrapyField,
   input_processor=MapCompose(str_to_float),
   output_processor=TakeFirst()
 )
 
-# modified 'scrapy.Field' to be used with integer values
+# modified 'scrapy.Field' to be used with integer-values
 ScrapyIntField = partial(
   ScrapyField,
   input_processor=MapCompose(str_to_int),
@@ -72,7 +71,7 @@ ScrapyIntField = partial(
 
 
 class Car(ScrapyItem):
-  """Scrapy Item used to collect info about specific car"""
+  """Item to collect info about specific car"""
   brand: str = ScrapyStrField()
   model: str = ScrapyStrField()
   year: int = ScrapyIntField()
